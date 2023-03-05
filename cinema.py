@@ -1,29 +1,30 @@
+from bs4 import BeautifulSoup
+import pandas as pd
+import requests
 
-"""
-The page shown at the link below contains movies with some metadata of interest to our friend Quentin, a budding movie director.
+def transform(url):
+    # Recover HTML code
+    request = requests.get(url)
+    soup = BeautifulSoup(request.content, "html.parser")
 
-https://www.listchallenges.com/100-must-see-movies-for-more-advanced-cinephiles
+    # Allow to recover title and year for each movie
+    title_and_year = soup.findAll('div', attrs={'class': "item-name"})
+    list_title_and_date = [title_and_year[i].text.strip().replace(")", "").split(" (") for i in range(len(title_and_year))]
 
-title
-year
-ranking
-no_of_votes
+    # Allow to recover the number of votes for each movie
+    down_votes = soup.find_all("span", attrs={"class", "listVote-downVoteCount"})
+    up_votes = soup.find_all("span", attrs={"class", "listVote-upVoteCount"})
+    number_votes = [int(down_votes[i].text) + int(up_votes[i].text) for i in range(len(down_votes))]
 
+    # DataFrame construction
+    res = pd.DataFrame(list_title_and_date, columns=["title", "year"])
+    res['ranking'] = range(1, len(list_title_and_date) + 1)
+    res["no_of_votes"] = number_votes
 
-Task
-Using your preferred language and/or tools - write a program that parses this page and extracts the following data into two possible file formats
+    return res.to_csv()
 
-1 - A CSV file
-2 - A HTML file with some style formatting applied - You can use a CSS framework like https://tailwindcss.com/docs to complete this task.
+# URL of the page you want to parse, here: 100 Must See Movies for More Advanced Cinephiles
+url_to_recover = "https://www.listchallenges.com/100-must-see-movies-for-more-advanced-cinephiles/vote"
 
-
-Include instructions on how to run your program including installing any dependencies.
-
-Usage:
-
-python cinema.py --format [ CSV | HTML ]
-
-"""
-
-def transform():
-  pass
+# Call transform method to recover movies data in CSV
+data = transform(url_to_recover)
